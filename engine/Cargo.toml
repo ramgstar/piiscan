@@ -1,0 +1,28 @@
+[package]
+name = "piiscan-engine"
+version = "0.1.0"
+edition = "2021"
+description = "High-throughput regex matching engine for PII scanning. Reads JSONL records, applies a compiled pattern set, and emits candidate findings as JSONL."
+license = "MIT"
+
+[[bin]]
+name = "piiscan-engine"
+path = "src/main.rs"
+
+[lib]
+name = "piiscan_engine"
+path = "src/lib.rs"
+
+[dependencies]
+regex = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+clap = { version = "4", features = ["derive"] }
+
+[dev-dependencies]
+tempfile = "3"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1

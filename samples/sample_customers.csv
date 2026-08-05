@@ -1,0 +1,6 @@
+id,name,memo,contact
+1,Alice,"resident 900101-1234568 on file",a.kim@example.com
+2,Bob,"card 4111-1111-1111-1111 expired","note: none"
+3,Carol,"biz reg 220-81-62517","fake rrn 900101-1234567 here"
+4,Dave,"no sensitive data",pending
+5,Eve,"card 1234-5678-9012-3456 invalid",e.park@example.co.kr

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>piiscan — scan dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg: #0f1117; --card: #181b24; --line: #2a2f3c; --tx: #e6e9ef;
+            --mut: #9aa3b2; --accent: #4c8dff; --hi: #2ecc71; --lo: #e74c3c;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: var(--bg); color: var(--tx);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 28px; }
+        h1 { font-size: 1.4rem; margin: 0 0 4px; }
+        .sub { color: var(--mut); margin: 0 0 22px; font-size: .9rem; }
+        .grid { display: grid; grid-template-columns: 320px 1fr; gap: 20px; align-items: start; }
+        .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+        label { display: block; font-size: .82rem; color: var(--mut); margin: 12px 0 4px; }
+        input, select { width: 100%; padding: 8px 10px; background: #0f121a; color: var(--tx);
+            border: 1px solid var(--line); border-radius: 8px; font-size: .9rem; }
+        button { margin-top: 16px; padding: 9px 14px; border: none; border-radius: 8px;
+            font-weight: 600; cursor: pointer; font-size: .9rem; }
+        .primary { background: var(--accent); color: #fff; }
+        .ghost { background: transparent; color: var(--mut); border: 1px solid var(--line); margin-left: 8px; }
+        .status { font-size: .85rem; margin: 4px 0 14px; }
+        .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-weight: 600; font-size: .78rem; }
+        .b-run { background: rgba(76,141,255,.15); color: var(--accent); }
+        .b-done { background: rgba(46,204,113,.15); color: var(--hi); }
+        .b-fail { background: rgba(231,76,60,.15); color: var(--lo); }
+        .metrics { display: flex; gap: 22px; margin: 8px 0 18px; }
+        .metric .n { font-size: 1.5rem; font-weight: 700; }
+        .metric .l { font-size: .75rem; color: var(--mut); }
+        table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: .85rem; }
+        th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+        th { color: var(--mut); font-weight: 600; }
+        .err { color: var(--lo); font-size: .82rem; margin-top: 10px; white-space: pre-wrap; }
+        code { background: #0f121a; padding: 1px 6px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+<h1>piiscan</h1>
+<p class="sub">Two-stage PII scanner — the manager launches the analyzer per job and streams progress live.</p>
+
+<div class="grid">
+    <div class="card">
+        <strong>New scan</strong>
+        <label for="mode">Source</label>
+        <select id="mode">
+            <option value="synthetic">Synthetic data</option>
+            <option value="csv">CSV file</option>
+        </select>
+
+        <div id="syntheticRow">
+            <label for="rows">Synthetic rows</label>
+            <input id="rows" type="number" value="20000" min="1"/>
+        </div>
+        <div id="csvRow" style="display:none">
+            <label for="csv">CSV path (relative to manager working dir)</label>
+            <input id="csv" type="text" value="samples/sample_customers.csv"/>
+        </div>
+
+        <label for="workers">Workers (virtual threads)</label>
+        <input id="workers" type="number" value="8" min="1"/>
+        <label for="batch">Batch size</label>
+        <input id="batch" type="number" value="2000" min="1"/>
+
+        <div>
+            <button class="primary" id="startBtn">Start scan</button>
+            <button class="ghost" id="stopBtn" disabled>Stop</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="status">
+            job <code id="jobId">—</code>
+            <span id="badge" class="badge b-run" style="display:none">RUNNING</span>
+        </div>
+        <div class="metrics">
+            <div class="metric"><div class="n" id="mBatches">0</div><div class="l">batches</div></div>
+            <div class="metric"><div class="n" id="mValues">0</div><div class="l">values scanned</div></div>
+            <div class="metric"><div class="n" id="mConfirmed">0</div><div class="l">confirmed rows</div></div>
+        </div>
+        <canvas id="chart" height="120"></canvas>
+        <table id="summary" style="display:none">
+            <thead>
+            <tr><th>Pattern</th><th>Name</th><th>Confirmed</th><th>Rejected</th></tr>
+            </thead>
+            <tbody id="summaryBody"></tbody>
+        </table>
+        <div class="err" id="err"></div>
+    </div>
+</div>
+
+<script src="/app.js" defer></script>
+</body>
+</html>

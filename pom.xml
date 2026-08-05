@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--
+      Spring Boot 4.0.1 (Spring Framework 7, Jakarta EE 11). Requires JDK 17+;
+      this project targets JDK 21.
+    -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.0.1</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.piiscan</groupId>
+    <artifactId>piiscan-parent</artifactId>
+    <version>0.1.0</version>
+    <packaging>pom</packaging>
+    <name>piiscan-parent</name>
+    <description>Multi-module PII scanner: native regex engine + JVM manager/analyzer/source-tester</description>
+
+    <properties>
+        <java.version>21</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <!--
+      The Rust `engine/` module is built separately with Cargo and is not part
+      of the Maven reactor. See the README for the build order.
+    -->
+    <modules>
+        <module>analyzer</module>
+        <module>manager</module>
+        <module>source-tester</module>
+    </modules>
+</project>

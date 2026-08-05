@@ -1,0 +1,37 @@
+# source-tester는 서버가 아니라 짧게 실행되는 CLI입니다.
+# 프로필 선택: --spring.profiles.active=prod (기본은 dev)
+spring:
+  application:
+    name: piiscan-source-tester
+  profiles:
+    active: dev
+  main:
+    web-application-type: none
+    banner-mode: "off"
+
+# stdout은 SOURCE_TEST_RESULT= 마커를 파싱하므로 깨끗하게 유지.
+logging:
+  pattern:
+    console: ""
+
+---
+# dev: 조금 더 자세히.
+spring:
+  config:
+    activate:
+      on-profile: dev
+logging:
+  level:
+    root: WARN
+    com.piiscan: INFO
+
+---
+# prod: 마커 외 출력 최소화.
+spring:
+  config:
+    activate:
+      on-profile: prod
+logging:
+  level:
+    root: ERROR
+    com.piiscan: WARN
