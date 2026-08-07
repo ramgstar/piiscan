@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.piiscan</groupId>
+        <artifactId>piiscan-parent</artifactId>
+        <version>0.1.0</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>piiscan-scanner</artifactId>
+    <name>piiscan-scanner</name>
+    <description>
+        Scanner: run당 배치 프로세스. 착륙 폴더의 파일을 감지·클레임하여 파일 1건당 producer
+        태스크로 파싱(통일 input + dedup + 위치)하고, MessageBroker를 거쳐 consumer 풀이 네이티브
+        엔진(ProcessBuilder) + 체크섬으로 확정, 마스킹 리포트를 적재한다. 스캔 코어는
+        프레임워크 비의존, 파서 의존성은 parse 계층 한정.
+    </description>
+
+    <properties>
+        <commons-csv.version>1.11.0</commons-csv.version>
+        <!--
+          JSON 스트리밍은 jackson-core 2.x(com.fasterxml.jackson.core.*) API로 구현했다.
+          Spring Boot 4가 Jackson 3(tools.jackson.*)를 끌어올 수 있어, 스트리밍 파서가
+          컴파일/런타임에 확실히 2.x API를 쓰도록 jackson-core를 명시 버전으로 고정한다.
+        -->
+        <jackson-core.version>2.17.2</jackson-core.version>
+    </properties>
+
+    <dependencies>
+        <!-- 짧게 실행되는 CLI(배치). 웹 없음. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+        <!-- JSON 스트리밍 파서(Jackson 2.x core) — 명시 버전 핀 고정 -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson-core.version}</version>
+        </dependency>
+        <!-- 경량 CSV 파서 — 버전 명시 핀 고정(BOM 미관리) -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>${commons-csv.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>piiscan-scanner</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.piiscan.scanner.app.ScannerApplication</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

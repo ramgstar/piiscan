@@ -32,8 +32,7 @@
       of the Maven reactor. See the README for the build order.
     -->
     <modules>
-        <module>analyzer</module>
+        <module>scanner</module>
         <module>manager</module>
-        <module>source-tester</module>
     </modules>
 </project>

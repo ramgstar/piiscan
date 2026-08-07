@@ -1,0 +1,43 @@
+# scanner는 서버가 아니라 run당 짧게 실행되는 CLI(배치)입니다.
+# 프로필 선택: --spring.profiles.active=prod (기본은 dev)
+spring:
+  application:
+    name: piiscan-scanner
+  profiles:
+    active: dev
+  main:
+    web-application-type: none
+    banner-mode: "off"
+
+# stdout은 manager가 PROGRESS=/FILE=/SUMMARY= 마커를 파싱하므로 깨끗하게 유지.
+# 애플리케이션 로그는 콘솔 출력 패턴을 비워 억제하고, 레벨은 프로필별로 조정.
+logging:
+  pattern:
+    console: ""
+
+# piiscan.* 경로/노브는 ScannerProperties의 기본값을 사용하며, 필요 시 여기서 덮어쓴다.
+# 기본값 예: scan-dir=piiScanner/scanFiles, engine-path=engine/target/release/piiscan-engine,
+#           patterns-path=piiScanner/patterns.json, consumers=CPU수, broker-capacity=64,
+#           quiet-period-seconds=5, sample-locations=20, masking=partial.
+
+---
+# dev: 문제 진단을 위해 조금 더 자세히.
+spring:
+  config:
+    activate:
+      on-profile: dev
+logging:
+  level:
+    root: WARN
+    com.piiscan: INFO
+
+---
+# prod: 마커 외 출력 최소화.
+spring:
+  config:
+    activate:
+      on-profile: prod
+logging:
+  level:
+    root: ERROR
+    com.piiscan: WARN

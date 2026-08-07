@@ -26,7 +26,7 @@ jobs:
             engine/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('engine/Cargo.lock') }}
 
-      # Build the native engine first: the analyzer's end-to-end test drives it.
+      # Build the native engine first: the scanner reuses it at runtime.
       - name: Build engine (release)
         run: cargo build --release --manifest-path engine/Cargo.toml
 
@@ -40,7 +40,6 @@ jobs:
           java-version: '21'
           cache: maven
 
-      # Reactor build: compiles and tests analyzer, manager and source-tester.
-      # The analyzer's e2e test uses the engine binary built above.
+      # Reactor build: compiles and tests the scanner and manager modules.
       - name: Build and test (all modules)
         run: mvn -B verify

@@ -1,0 +1,8 @@
+{
+  "team": "growth",
+  "members": [
+    {"name": "Alice", "email": "alice.kim@example.com", "rrn": "900101-1234568", "note": "no card"},
+    {"name": "Bob", "email": "bob@example.co.kr", "card": "4111-1111-1111-1111", "biz": "220-81-62517"},
+    {"name": "Carol", "memo": "fake rrn 900101-1234567 should be rejected"}
+  ]
+}

@@ -19,3 +19,9 @@ Thumbs.db
 # Scratch
 /tmp/
 *.log
+
+# piiscan 런타임 산출물(스캔 처리 결과/이동 폴더)
+piiScanner/processed/
+piiScanner/failed/
+piiScanner/results/
+piiScanner/scanFiles/.processing/

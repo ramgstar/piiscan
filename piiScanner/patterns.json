@@ -1,0 +1,26 @@
+[
+  {
+    "id": "KR_RRN",
+    "name": "Korean resident registration number",
+    "regex": "\\d{6}-?[1-4]\\d{6}",
+    "validator": "kr_rrn"
+  },
+  {
+    "id": "CARD",
+    "name": "Credit card number",
+    "regex": "\\d{4}-?\\d{4}-?\\d{4}-?\\d{4}",
+    "validator": "luhn"
+  },
+  {
+    "id": "KR_BRN",
+    "name": "Korean business registration number",
+    "regex": "\\d{3}-?\\d{2}-?\\d{5}",
+    "validator": "kr_brn"
+  },
+  {
+    "id": "EMAIL",
+    "name": "Email address",
+    "regex": "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}",
+    "validator": "none"
+  }
+]
