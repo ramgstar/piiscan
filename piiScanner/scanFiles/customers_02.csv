@@ -1,0 +1,61 @@
+id,name,memo,contact
+1,Judy,"resident 140514-3456281",bob.yoon57@example.co.kr
+2,Grace,"resident 140823-4737175; biz 127-77-45112",ivan.yoon4@example.co.kr
+3,Park,"card 4034-4829-6077-0313; biz 599-83-92075",approved
+4,Eve,"resident 491127-1860081; card 5079-0973-6063-7883",choi.choi53@test.org
+5,Lee,"resident 061216-3397555; biz 001-26-03505",eve.park49@example.com
+6,Carol,"resident 770307-1091111",judy.seo1@mail.example.net
+7,Carol,"resident 990508-2877499; card 5998-7938-9650-6564; biz 806-41-10573",approved
+8,Ivan,"resident 040813-1257096; card 4196-0972-3909-9720",misc
+9,Dave,"card 5150-2872-1746-1052",choi.choi21@example.co.kr
+10,Han,"card 5439-2011-1350-7440",alice.lee96@mail.example.net
+11,Seo,"resident 590222-4820930; card 5135-7329-4458-8269",heidi.oh94@test.org
+12,Oh,"resident 210528-4131756",bob.han58@test.org
+13,Grace,"resident 600115-2508149; card 4683-5059-5434-5537; biz 796-22-25818",internal note
+14,Judy,"resident 651101-1572895; card 4930-6242-1579-8228",misc
+15,Alice,"n/a",yoon.lee17@example.co.kr
+16,Oh,"resident 101214-4466285; biz 850-85-67169",ivan.park35@test.org
+17,Han,"resident 650415-4453935; card 4860-8407-4387-2486",eve.han61@mail.example.net
+18,Bob,"card 5997-9852-7225-2566; biz 551-33-15774",see attachment
+19,Park,"resident 460327-2092180; card 4092-7259-2189-8389; biz 491-00-31666",follow up next week
+20,Dave,"resident 290217-4853089; card 5214-4576-4882-3097",internal note
+21,Seo,"card 4468-4971-6699-8976",dave.park77@mail.example.net
+22,Lee,"resident 890215-2421818; card 5652-4591-7354-5631",kim.seo97@example.com
+23,Alice,"card 5186-0832-4275-6856",heidi.lee98@test.org
+24,Eve,"resident 731228-2908421",choi.cho6@example.com
+25,Heidi,"card 5645-4200-0969-1445; biz 939-76-52803",ivan.seo19@corp.example.com
+26,Ivan,"resident 780226-1468444",bob.yoon50@corp.example.com
+27,Bob,"resident 890502-3181073; card 4715-1256-8902-8812",park.lee79@test.org
+28,Ivan,"card 4863-4973-9819-7034; biz 717-29-70848",pending review
+29,Heidi,"resident 940215-2744466; card 4368-7566-1003-6804; biz 103-04-33347",carol.seo72@corp.example.com
+30,Oh,"resident 490312-3183115; card 5924-9993-0943-0663",misc
+31,Kim,"biz 599-83-56967",judy.park8@mail.example.net
+32,Park,"resident 530710-4776523",han.yoon50@example.com
+33,Eve,"n/a",follow up next week
+34,Ivan,"resident 790416-1040214; card 5381-3571-7938-3945; biz 887-62-31723",park.han65@example.com
+35,Choi,"misc",han.choi44@test.org
+36,Seo,"resident 660501-2123806",approved
+37,Kim,"n/a",grace.seo82@test.org
+38,Park,"card 5060-8739-2538-4758; biz 601-69-15355",approved
+39,Bob,"resident 340609-2211095",heidi.jang92@mail.example.net
+40,Dave,"resident 860426-1249450",pending review
+41,Lee,"card 4897-3613-1394-8838; biz 088-27-68689",ivan.seo45@test.org
+42,Seo,"resident 831116-4000520; biz 549-24-63113",park.han48@example.co.kr
+43,Heidi,"resident 360719-2365427; card 5047-7845-8772-2713",grace.oh39@example.co.kr
+44,Alice,"resident 590822-3216287; biz 859-54-51079",judy.lee68@example.co.kr
+45,Judy,"resident 030813-2547431",follow up next week
+46,Dave,"card 5962-5007-4969-1404; biz 227-62-35756",heidi.yoon65@example.com
+47,Oh,"card 5347-2371-1204-5793",alice.park37@example.com
+48,Dave,"resident 191126-1699884",internal note
+49,Bob,"resident 350122-1859701",ivan.cho43@mail.example.net
+50,Judy,"resident 720720-4397950; card 4085-0614-7230-2377",grace.kim86@corp.example.com
+51,Bob,"biz 087-73-61739",oh.kim87@corp.example.com
+52,Oh,"resident 000912-1821198",choi.jang32@corp.example.com
+53,Lee,"resident 490726-3556378; card 4135-1197-0212-3680",approved
+54,Alice,"resident 530718-3286053; card 5650-1651-2492-3395",lee.yoon13@example.co.kr
+55,Heidi,"n/a",judy.oh35@mail.example.net
+56,Yoon,"resident 760228-4491676; card 5188-5315-4822-1537",frank.yoon19@mail.example.net
+57,Lee,"resident 260503-2627431; card 5619-9758-4411-8807",pending review
+58,Choi,"resident 261202-3226951; biz 164-54-77257",carol.oh84@example.com
+59,Kim,"resident 530915-3777798; card 5388-7975-5380-7639; biz 639-54-27168",kim.seo41@test.org
+60,Dave,"resident 220913-1720914",no sensitive data

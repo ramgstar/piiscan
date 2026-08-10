@@ -1,0 +1,298 @@
+{
+  "org": "acme",
+  "departments": [
+    {
+      "dept": "Eng",
+      "people": [
+        {
+          "name": "Grace",
+          "email": "judy.oh21@corp.example.com"
+        },
+        {
+          "name": "Frank",
+          "email": "seo.lee4@example.com"
+        },
+        {
+          "name": "Han",
+          "email": "carol.oh1@example.com",
+          "id": "470903-1570257"
+        },
+        {
+          "name": "Seo",
+          "email": "heidi.seo88@corp.example.com",
+          "id": "681013-2852799"
+        },
+        {
+          "name": "Judy",
+          "email": "yoon.kim22@test.org"
+        },
+        {
+          "name": "Frank",
+          "email": "park.jang54@example.co.kr"
+        },
+        {
+          "name": "Park",
+          "email": "bob.choi10@example.com",
+          "id": "170621-3751041"
+        },
+        {
+          "name": "Bob",
+          "email": "lee.oh11@mail.example.net"
+        },
+        {
+          "name": "Oh",
+          "email": "oh.jang82@test.org"
+        },
+        {
+          "name": "Choi",
+          "email": "park.cho40@example.com"
+        },
+        {
+          "name": "Kim",
+          "email": "dave.yoon93@corp.example.com"
+        },
+        {
+          "name": "Dave",
+          "email": "bob.choi41@mail.example.net",
+          "id": "180123-4788788"
+        }
+      ]
+    },
+    {
+      "dept": "Eng",
+      "people": [
+        {
+          "name": "Ivan",
+          "email": "bob.cho38@corp.example.com"
+        },
+        {
+          "name": "Seo",
+          "email": "bob.choi29@example.com",
+          "id": "251008-2158641"
+        },
+        {
+          "name": "Heidi",
+          "email": "lee.yoon94@corp.example.com"
+        },
+        {
+          "name": "Eve",
+          "email": "bob.cho4@test.org",
+          "id": "490318-4844529"
+        },
+        {
+          "name": "Oh",
+          "email": "grace.yoon51@example.com",
+          "id": "601019-4095930"
+        },
+        {
+          "name": "Choi",
+          "email": "judy.han24@mail.example.net",
+          "id": "401023-4750602"
+        },
+        {
+          "name": "Yoon",
+          "email": "eve.oh58@test.org",
+          "id": "630219-2320557"
+        },
+        {
+          "name": "Yoon",
+          "email": "grace.yoon98@corp.example.com",
+          "id": "590804-4040558"
+        },
+        {
+          "name": "Choi",
+          "email": "dave.kim59@example.com",
+          "id": "180903-3250015"
+        },
+        {
+          "name": "Kim",
+          "email": "seo.cho43@example.com",
+          "id": "180814-4880723"
+        },
+        {
+          "name": "Dave",
+          "email": "oh.kim17@mail.example.net"
+        },
+        {
+          "name": "Heidi",
+          "email": "carol.cho62@test.org",
+          "id": "360414-2775553"
+        }
+      ]
+    },
+    {
+      "dept": "Legal",
+      "people": [
+        {
+          "name": "Choi",
+          "email": "judy.kim45@mail.example.net"
+        },
+        {
+          "name": "Eve",
+          "email": "carol.han45@corp.example.com"
+        },
+        {
+          "name": "Heidi",
+          "email": "kim.yoon50@example.com",
+          "id": "481223-4400668"
+        },
+        {
+          "name": "Eve",
+          "email": "oh.oh40@example.com"
+        },
+        {
+          "name": "Heidi",
+          "email": "han.kim77@mail.example.net"
+        },
+        {
+          "name": "Kim",
+          "email": "choi.park35@example.co.kr",
+          "id": "050617-2089675"
+        },
+        {
+          "name": "Carol",
+          "email": "grace.seo74@example.com"
+        },
+        {
+          "name": "Carol",
+          "email": "oh.seo54@mail.example.net"
+        },
+        {
+          "name": "Dave",
+          "email": "lee.yoon77@example.co.kr"
+        },
+        {
+          "name": "Frank",
+          "email": "kim.choi58@mail.example.net"
+        },
+        {
+          "name": "Choi",
+          "email": "carol.lee49@example.com"
+        },
+        {
+          "name": "Oh",
+          "email": "dave.jang91@mail.example.net"
+        }
+      ]
+    },
+    {
+      "dept": "Support",
+      "people": [
+        {
+          "name": "Oh",
+          "email": "park.kim20@example.com"
+        },
+        {
+          "name": "Choi",
+          "email": "yoon.cho55@corp.example.com",
+          "id": "461215-3540214"
+        },
+        {
+          "name": "Yoon",
+          "email": "eve.yoon60@corp.example.com",
+          "id": "021026-2885419"
+        },
+        {
+          "name": "Alice",
+          "email": "seo.cho61@mail.example.net",
+          "id": "900318-1338614"
+        },
+        {
+          "name": "Grace",
+          "email": "eve.cho76@example.co.kr",
+          "id": "201208-4889489"
+        },
+        {
+          "name": "Kim",
+          "email": "kim.choi62@mail.example.net",
+          "id": "460823-4596580"
+        },
+        {
+          "name": "Park",
+          "email": "alice.jang98@example.co.kr",
+          "id": "430601-1397637"
+        },
+        {
+          "name": "Eve",
+          "email": "alice.choi62@mail.example.net"
+        },
+        {
+          "name": "Bob",
+          "email": "han.yoon75@example.com"
+        },
+        {
+          "name": "Bob",
+          "email": "oh.lee3@mail.example.net",
+          "id": "870101-2665596"
+        },
+        {
+          "name": "Frank",
+          "email": "bob.cho10@example.co.kr"
+        },
+        {
+          "name": "Ivan",
+          "email": "grace.han16@example.com"
+        }
+      ]
+    },
+    {
+      "dept": "HR",
+      "people": [
+        {
+          "name": "Choi",
+          "email": "yoon.han17@test.org",
+          "id": "050112-4489945"
+        },
+        {
+          "name": "Park",
+          "email": "park.oh60@example.com",
+          "id": "150425-1740086"
+        },
+        {
+          "name": "Heidi",
+          "email": "lee.seo56@corp.example.com"
+        },
+        {
+          "name": "Lee",
+          "email": "kim.seo80@corp.example.com",
+          "id": "590118-3751199"
+        },
+        {
+          "name": "Grace",
+          "email": "seo.seo79@example.co.kr",
+          "id": "750111-4131760"
+        },
+        {
+          "name": "Judy",
+          "email": "carol.han33@mail.example.net",
+          "id": "350415-4149440"
+        },
+        {
+          "name": "Seo",
+          "email": "park.jang27@example.co.kr",
+          "id": "300507-1942034"
+        },
+        {
+          "name": "Kim",
+          "email": "yoon.oh79@corp.example.com"
+        },
+        {
+          "name": "Alice",
+          "email": "yoon.lee89@example.com"
+        },
+        {
+          "name": "Seo",
+          "email": "kim.choi83@example.co.kr"
+        },
+        {
+          "name": "Heidi",
+          "email": "yoon.kim55@corp.example.com"
+        },
+        {
+          "name": "Lee",
+          "email": "kim.jang96@mail.example.net"
+        }
+      ]
+    }
+  ]
+}

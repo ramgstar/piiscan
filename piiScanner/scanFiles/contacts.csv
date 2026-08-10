@@ -1,0 +1,46 @@
+id,name,memo,contact
+1,Judy,"biz 753-26-96090",approved
+2,Bob,"biz 350-22-05159",alice.oh61@test.org
+3,Frank,"resident 551008-1947979",carol.cho53@mail.example.net
+4,Grace,"resident 160903-1695144; card 4830-9164-9416-8912",misc
+5,Bob,"resident 471120-2924436; card 5886-0983-4975-7555",seo.han22@example.com
+6,Yoon,"n/a",oh.jang17@example.com
+7,Park,"resident 391018-2559962",choi.seo16@example.com
+8,Bob,"resident 270817-2126340",grace.jang20@example.com
+9,Frank,"card 5111-8740-6781-4783",kim.cho33@example.com
+10,Grace,"resident 030917-4173833",n/a
+11,Dave,"resident 070522-3825773; card 5831-7305-9506-7826; biz 369-11-41104",eve.park6@test.org
+12,Choi,"resident 900921-1088801; card 4716-7937-9900-6249",heidi.lee55@test.org
+13,Kim,"resident 111113-4113150; biz 021-97-20167",lee.kim39@test.org
+14,Yoon,"card 4312-2724-8056-0341; biz 042-74-44334",ivan.yoon89@example.co.kr
+15,Park,"resident 760913-2681508; card 5891-6402-0392-1584",seo.oh26@example.co.kr
+16,Heidi,"resident 440708-1260446; card 4032-1589-1852-6258; biz 376-39-12102",grace.lee49@test.org
+17,Lee,"resident 430623-4419489; biz 752-78-51730",alice.lee86@test.org
+18,Oh,"resident 230127-3568253; card 5534-2026-0756-2606",n/a
+19,Alice,"resident 060504-2993350; card 4388-3100-3997-8801",lee.seo39@mail.example.net
+20,Carol,"card 5379-8373-2706-6465; biz 208-89-86964",alice.park36@example.com
+21,Frank,"resident 740226-3091013; card 5790-6614-6875-9263",misc
+22,Carol,"resident 680926-2207916",grace.lee50@test.org
+23,Yoon,"resident 530316-4898256; card 4269-7989-8722-7979; biz 995-11-47878",park.jang1@example.co.kr
+24,Lee,"resident 811202-3961932; card 5464-4059-6202-7610",park.seo75@corp.example.com
+25,Lee,"resident 580313-1815908; card 4080-5634-7236-5388; biz 546-63-21067",no sensitive data
+26,Eve,"resident 770725-1129117; card 5813-4473-6787-0978; biz 985-81-71919",bob.choi8@test.org
+27,Seo,"card 5594-7987-0920-0535; biz 982-02-65368",carol.jang59@example.com
+28,Carol,"resident 381021-3128722",dave.han3@example.com
+29,Ivan,"card 4596-1936-1709-9550",han.kim90@example.co.kr
+30,Seo,"resident 081103-3586673; card 4825-3937-9862-7902; biz 307-57-21774",judy.kim51@mail.example.net
+31,Grace,"resident 250407-2135041; biz 041-07-98256",no sensitive data
+32,Frank,"resident 131212-3997285",frank.lee92@corp.example.com
+33,Choi,"biz 343-51-19733",no sensitive data
+34,Alice,"n/a",internal note
+35,Grace,"resident 641005-3949085; card 5764-9796-4428-2311",seo.kim40@mail.example.net
+36,Heidi,"resident 310708-3711394; card 4528-6354-9857-6501",no sensitive data
+37,Seo,"card 4926-1264-0543-7888; biz 812-71-26835",heidi.kim98@example.com
+38,Carol,"resident 750311-1544887; biz 800-44-86996",misc
+39,Frank,"biz 192-64-24391",frank.jang40@example.co.kr
+40,Judy,"card 5996-7625-8849-3190",eve.han16@mail.example.net
+41,Frank,"resident 510815-4103799; card 5259-4382-2101-9356",frank.cho44@example.com
+42,Lee,"resident 620214-4727138; card 4746-4238-1187-7184",frank.kim64@mail.example.net
+43,Kim,"card 5873-3417-2959-5489",heidi.oh40@corp.example.com
+44,Bob,"resident 610618-4619771; card 5108-3189-5192-1012",yoon.han26@corp.example.com
+45,Yoon,"resident 180806-1500485",see attachment
