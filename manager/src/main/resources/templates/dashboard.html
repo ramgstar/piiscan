@@ -14,7 +14,10 @@
         body { margin: 0; background: var(--bg); color: var(--tx);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 28px; }
         h1 { font-size: 1.4rem; margin: 0 0 4px; }
-        .sub { color: var(--mut); margin: 0 0 22px; font-size: .9rem; }
+        .sub { color: var(--mut); margin: 0 0 18px; font-size: .9rem; }
+        .tabs { display: flex; gap: 8px; margin: 0 0 20px; }
+        .tab { background: transparent; color: var(--mut); border: 1px solid var(--line); border-radius: 8px; }
+        .tab.active { background: var(--card); color: var(--tx); border-color: var(--accent); }
         .grid { display: grid; grid-template-columns: 320px 1fr; gap: 20px; align-items: start; }
         .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
         button { padding: 10px 16px; border: none; border-radius: 8px;
@@ -32,11 +35,11 @@
         .bar > span { display: block; height: 100%; width: 0;
             background: linear-gradient(90deg, var(--accent), var(--hi)); transition: width .3s ease; }
         .pct { font-size: .8rem; color: var(--mut); margin-top: 4px; }
-        .metrics { display: flex; gap: 22px; margin: 16px 0 4px; }
+        .metrics { display: flex; gap: 22px; margin: 16px 0 4px; flex-wrap: wrap; }
         .metric .n { font-size: 1.5rem; font-weight: 700; }
         .metric .l { font-size: .75rem; color: var(--mut); }
         table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: .85rem; }
-        th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+        th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
         th { color: var(--mut); font-weight: 600; }
         .st-processed { color: var(--hi); }
         .st-failed { color: var(--lo); }
@@ -49,52 +52,105 @@
         .toast.show { opacity: 1; transform: translateY(0); }
         h3 { margin: 0 0 6px; font-size: .95rem; }
         .muted { color: var(--mut); font-size: .82rem; }
+        .chip { display: inline-block; padding: 1px 8px; margin: 1px 3px 1px 0; border-radius: 999px;
+            background: #0f121a; border: 1px solid var(--line); font-size: .72rem; color: var(--mut); }
+        .rows tr { cursor: pointer; }
+        .rows tr:hover td { background: rgba(76,141,255,.06); }
+        .loc { font-size: .74rem; color: var(--mut); }
     </style>
 </head>
 <body>
 <h1>piiscan</h1>
 <p class="sub">manager가 scanner를 자식 프로세스로 실행하고 진행 상황을 실시간으로 스트리밍합니다.</p>
 
-<div class="grid">
-    <div class="card">
-        <h3>실행</h3>
-        <p class="muted">스케줄에 따라 자동 실행되며, 아래 버튼으로 즉시 실행할 수도 있습니다.</p>
-        <button class="primary" id="runBtn">지금 스캔</button>
-        <div class="status" style="margin-top:16px">
-            run <code id="runId">—</code>
-            <span id="badge" class="badge b-idle">IDLE</span>
+<div class="tabs">
+    <button class="tab active" id="tabLiveBtn" data-tab="live">실시간</button>
+    <button class="tab" id="tabHistoryBtn" data-tab="history">결과 이력</button>
+</div>
+
+<!-- ===== 실시간 탭 ===== -->
+<div id="tab-live" class="tab-panel">
+    <div class="grid">
+        <div class="card">
+            <h3>실행</h3>
+            <p class="muted">스케줄에 따라 자동 실행되며, 아래 버튼으로 즉시 실행할 수도 있습니다.</p>
+            <button class="primary" id="runBtn">지금 스캔</button>
+            <div class="status" style="margin-top:16px">
+                run <code id="runId">—</code>
+                <span id="badge" class="badge b-idle">IDLE</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="stage">단계: <span id="stage">—</span></div>
+            <div class="bar"><span id="barFill"></span></div>
+            <div class="pct"><span id="completed">0</span> / <span id="total">0</span>
+                (<span id="pct">0</span>%) · in-flight <span id="inflight">0</span></div>
+
+            <div class="metrics">
+                <div class="metric"><div class="n" id="mConfirmed">0</div><div class="l">confirmed</div></div>
+                <div class="metric"><div class="n" id="mCompleted">0</div><div class="l">완료 파일</div></div>
+                <div class="metric"><div class="n" id="mTotal">0</div><div class="l">전체 파일</div></div>
+            </div>
+
+            <canvas id="chart" height="120" style="display:none"></canvas>
+
+            <table id="summaryTable" style="display:none">
+                <thead>
+                <tr><th>패턴</th><th>이름</th><th>confirmed</th></tr>
+                </thead>
+                <tbody id="summaryBody"></tbody>
+            </table>
+
+            <h3 style="margin-top:20px">파일</h3>
+            <div class="files">
+                <table>
+                    <thead>
+                    <tr><th>파일</th><th>상태</th><th>confirmed</th><th>사유</th></tr>
+                    </thead>
+                    <tbody id="fileBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
+</div>
 
-    <div class="card">
-        <div class="stage">단계: <span id="stage">—</span></div>
-        <div class="bar"><span id="barFill"></span></div>
-        <div class="pct"><span id="completed">0</span> / <span id="total">0</span>
-            (<span id="pct">0</span>%) · in-flight <span id="inflight">0</span></div>
-
-        <div class="metrics">
-            <div class="metric"><div class="n" id="mConfirmed">0</div><div class="l">confirmed</div></div>
-            <div class="metric"><div class="n" id="mCompleted">0</div><div class="l">완료 파일</div></div>
-            <div class="metric"><div class="n" id="mTotal">0</div><div class="l">전체 파일</div></div>
+<!-- ===== 결과 이력 탭 ===== -->
+<div id="tab-history" class="tab-panel" style="display:none">
+    <div class="grid">
+        <div class="card">
+            <h3>스캔 이력</h3>
+            <p class="muted">완료된 최근 스캔(최신순). 행을 클릭하면 리포트가 열립니다.</p>
+            <button class="primary" id="refreshHistory" style="width:auto">새로고침</button>
+            <div class="files" style="max-height:520px; margin-top:12px">
+                <table>
+                    <thead>
+                    <tr><th>시각</th><th>run</th><th>처리/실패</th><th>확정</th></tr>
+                    </thead>
+                    <tbody id="historyBody" class="rows"></tbody>
+                </table>
+            </div>
         </div>
 
-        <canvas id="chart" height="120" style="display:none"></canvas>
-
-        <table id="summaryTable" style="display:none">
-            <thead>
-            <tr><th>패턴</th><th>이름</th><th>confirmed</th></tr>
-            </thead>
-            <tbody id="summaryBody"></tbody>
-        </table>
-
-        <h3 style="margin-top:20px">파일</h3>
-        <div class="files">
-            <table>
-                <thead>
-                <tr><th>파일</th><th>상태</th><th>confirmed</th><th>사유</th></tr>
-                </thead>
-                <tbody id="fileBody"></tbody>
-            </table>
+        <div class="card" id="historyDetail">
+            <div class="muted" id="detailEmpty">왼쪽 목록에서 스캔을 선택하세요.</div>
+            <div id="detailContent" style="display:none">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:12px">
+                    <h3 id="detailTitle" style="margin:0">리포트</h3>
+                    <button id="exportHtml" style="width:auto; background:var(--accent); color:#fff">HTML 내보내기</button>
+                </div>
+                <div class="metrics" id="detailMetrics"></div>
+                <canvas id="historyChart" height="120"></canvas>
+                <h3 style="margin-top:18px">탐지 상세</h3>
+                <div class="files" style="max-height:340px">
+                    <table>
+                        <thead>
+                        <tr><th>파일</th><th>패턴</th><th>이름</th><th>확정</th><th>마스킹 샘플</th><th>위치</th></tr>
+                        </thead>
+                        <tbody id="detailFindings"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 </div>

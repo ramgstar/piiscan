@@ -152,7 +152,7 @@ function connect() {
     source.addEventListener('progress', function (e) { applyProgress(JSON.parse(e.data)); });
     source.addEventListener('file', function (e) { appendFile(JSON.parse(e.data)); });
     source.addEventListener('summary', function (e) { renderSummary(JSON.parse(e.data)); });
-    source.addEventListener('end', function () { setBadge('DONE'); });
+    source.addEventListener('end', function () { setBadge('DONE'); loadHistory(); });
     source.addEventListener('error', function () {
         // Connection dropped (run ended / server restart). EventSource auto-reconnects.
     });
@@ -175,3 +175,212 @@ async function init() {
 }
 
 init();
+
+// =========================================================================
+// 결과 이력 탭
+// =========================================================================
+
+const tabPanels = { live: el('tab-live'), history: el('tab-history') };
+function showTab(name) {
+    Object.keys(tabPanels).forEach(function (k) {
+        tabPanels[k].style.display = (k === name) ? 'block' : 'none';
+    });
+    el('tabLiveBtn').classList.toggle('active', name === 'live');
+    el('tabHistoryBtn').classList.toggle('active', name === 'history');
+    if (name === 'history') { loadHistory(); }
+}
+el('tabLiveBtn').addEventListener('click', function () { showTab('live'); });
+el('tabHistoryBtn').addEventListener('click', function () { showTab('history'); });
+el('refreshHistory').addEventListener('click', loadHistory);
+el('exportHtml').addEventListener('click', exportHtml);
+
+let historyChart = null;
+let currentDetail = null;
+
+function fmtTime(iso) {
+    if (!iso) { return '—'; }
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? iso : d.toLocaleString();
+}
+
+async function loadHistory() {
+    let runs = [];
+    try {
+        const res = await fetch('/api/v1/results');
+        runs = await res.json();
+    } catch (e) {
+        toast('이력 조회 실패: ' + e.message);
+        return;
+    }
+    renderHistoryList(Array.isArray(runs) ? runs : []);
+}
+
+function renderHistoryList(runs) {
+    const tbody = el('historyBody');
+    tbody.innerHTML = '';
+    if (!runs.length) {
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 4; td.className = 'muted'; td.textContent = '완료된 스캔 이력이 없습니다.';
+        tr.appendChild(td); tbody.appendChild(tr);
+        return;
+    }
+    runs.forEach(function (r) {
+        const files = r.files || {};
+        const tr = document.createElement('tr');
+        [fmtTime(r.finishedAt || r.startedAt), r.runId || '',
+            fmt(files.processed) + ' / ' + fmt(files.failed), fmt(r.confirmedTotal)]
+            .forEach(function (v) {
+                const td = document.createElement('td'); td.textContent = v; tr.appendChild(td);
+            });
+        tr.addEventListener('click', function () { openRun(r.runId); });
+        tbody.appendChild(tr);
+    });
+}
+
+async function openRun(runId) {
+    let detail;
+    try {
+        const res = await fetch('/api/v1/results/' + encodeURIComponent(runId));
+        if (!res.ok) { toast('리포트를 찾을 수 없습니다.'); return; }
+        detail = await res.json();
+    } catch (e) {
+        toast('리포트 조회 실패: ' + e.message);
+        return;
+    }
+    currentDetail = detail;
+    renderDetail(detail);
+}
+
+function locText(locations) {
+    if (!locations || !locations.length) { return ''; }
+    const parts = locations.slice(0, 5).map(function (l) {
+        if (l && l.path != null) { return l.path; }
+        if (l && l.row != null) { return 'row ' + l.row + (l.col != null ? ' · ' + l.col : ''); }
+        return JSON.stringify(l);
+    });
+    const more = locations.length > 5 ? ' …(+' + (locations.length - 5) + ')' : '';
+    return parts.join(', ') + more;
+}
+
+function renderDetail(detail) {
+    const summary = detail.summary || {};
+    const reports = detail.reports || [];
+    el('detailEmpty').style.display = 'none';
+    el('detailContent').style.display = 'block';
+    el('detailTitle').textContent = '리포트 · ' + (summary.runId || '');
+
+    const files = summary.files || {};
+    const metrics = [
+        ['확정 총계', fmt(summary.confirmedTotal)],
+        ['처리 파일', fmt(files.processed)],
+        ['실패 파일', fmt(files.failed)],
+        ['소요(ms)', fmt(summary.durationMs)]
+    ];
+    el('detailMetrics').innerHTML = metrics.map(function (m) {
+        return '<div class="metric"><div class="n">' + m[1] + '</div><div class="l">' + m[0] + '</div></div>';
+    }).join('');
+
+    const byPattern = summary.byPattern || {};
+    const labels = Object.keys(byPattern);
+    const data = labels.map(function (k) { return Number(byPattern[k] || 0); });
+    if (historyChart) { historyChart.destroy(); }
+    if (labels.length) {
+        historyChart = new Chart(el('historyChart'), {
+            type: 'bar',
+            data: { labels: labels, datasets: [{ label: 'confirmed', data: data, backgroundColor: '#2ecc71' }] },
+            options: {
+                responsive: true,
+                scales: { x: { ticks: { color: '#9aa3b2' } }, y: { ticks: { color: '#9aa3b2' }, beginAtZero: true } },
+                plugins: { legend: { labels: { color: '#e6e9ef' } } }
+            }
+        });
+    }
+
+    const tbody = el('detailFindings');
+    tbody.innerHTML = '';
+    reports.forEach(function (rep) {
+        const fname = (rep.source && rep.source.name) || rep.scanId || '';
+        (rep.findings || []).forEach(function (f) {
+            const tr = document.createElement('tr');
+            [fname, f.patternId || '', f.name || '', fmt(f.confirmedCount), f.maskedSample || '']
+                .forEach(function (v) { const td = document.createElement('td'); td.textContent = v; tr.appendChild(td); });
+            const locTd = document.createElement('td');
+            locTd.className = 'loc'; locTd.textContent = locText(f.locations);
+            tr.appendChild(locTd);
+            tbody.appendChild(tr);
+        });
+    });
+}
+
+// --- 자체 완결 HTML 내보내기 (오프라인에서도 열림; 차트는 인라인 CSS 막대) ---
+
+function exportHtml() {
+    if (!currentDetail) { return; }
+    const html = buildReportHtml(currentDetail);
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'piiscan-report-' + ((currentDetail.summary && currentDetail.summary.runId) || 'run') + '.html';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+}
+
+function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+}
+
+function buildReportHtml(detail) {
+    const summary = detail.summary || {};
+    const reports = detail.reports || [];
+    const files = summary.files || {};
+    const byPattern = summary.byPattern || {};
+    const values = Object.keys(byPattern).map(function (k) { return Number(byPattern[k] || 0); });
+    const maxV = Math.max.apply(null, [1].concat(values));
+    const bars = Object.keys(byPattern).map(function (k) {
+        const v = Number(byPattern[k] || 0);
+        const w = Math.round((v / maxV) * 100);
+        return '<div class="barrow"><span class="lbl">' + esc(k) + '</span>'
+            + '<span class="track"><span class="fill" style="width:' + w + '%"></span></span>'
+            + '<span class="val">' + v.toLocaleString() + '</span></div>';
+    }).join('');
+    let rows = '';
+    reports.forEach(function (rep) {
+        const fname = (rep.source && rep.source.name) || rep.scanId || '';
+        (rep.findings || []).forEach(function (f) {
+            rows += '<tr><td>' + esc(fname) + '</td><td>' + esc(f.patternId) + '</td><td>' + esc(f.name)
+                + '</td><td class="num">' + Number(f.confirmedCount || 0).toLocaleString() + '</td><td>' + esc(f.maskedSample)
+                + '</td><td class="loc">' + esc(locText(f.locations)) + '</td></tr>';
+        });
+    });
+    return '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>piiscan report '
+        + esc(summary.runId) + '</title><style>'
+        + 'body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;margin:32px;color:#1a1a1a}'
+        + 'h1{font-size:1.3rem}h2{font-size:1rem;margin-top:28px}.meta{color:#555;font-size:.85rem}'
+        + '.kpis{display:flex;gap:24px;margin:16px 0}.kpi .n{font-size:1.5rem;font-weight:700}.kpi .l{font-size:.75rem;color:#666}'
+        + '.barrow{display:flex;align-items:center;gap:10px;margin:4px 0;font-size:.82rem}.barrow .lbl{width:130px}'
+        + '.barrow .track{flex:1;background:#eee;border-radius:6px;overflow:hidden;height:14px}'
+        + '.barrow .fill{display:block;height:100%;background:#2ecc71}.barrow .val{width:80px;text-align:right}'
+        + 'table{border-collapse:collapse;width:100%;font-size:.82rem;margin-top:8px}'
+        + 'th,td{border-bottom:1px solid #ddd;text-align:left;padding:6px 8px;vertical-align:top}'
+        + 'td.num{text-align:right}td.loc{color:#666;font-size:.76rem}.note{color:#888;font-size:.75rem;margin-top:24px}'
+        + '</style></head><body>'
+        + '<h1>piiscan 스캔 리포트</h1>'
+        + '<div class="meta">run <b>' + esc(summary.runId) + '</b> · ' + esc(summary.finishedAt || summary.startedAt) + '</div>'
+        + '<div class="kpis">'
+        + '<div class="kpi"><div class="n">' + Number(summary.confirmedTotal || 0).toLocaleString() + '</div><div class="l">확정 총계</div></div>'
+        + '<div class="kpi"><div class="n">' + Number(files.processed || 0).toLocaleString() + '</div><div class="l">처리 파일</div></div>'
+        + '<div class="kpi"><div class="n">' + Number(files.failed || 0).toLocaleString() + '</div><div class="l">실패 파일</div></div>'
+        + '</div>'
+        + '<h2>패턴별 확정</h2>' + (bars || '<div class="meta">데이터 없음</div>')
+        + '<h2>탐지 상세</h2><table><thead><tr><th>파일</th><th>패턴</th><th>이름</th><th>확정</th><th>마스킹 샘플</th><th>위치</th></tr></thead><tbody>'
+        + (rows || '<tr><td colspan="6" class="meta">탐지 없음</td></tr>') + '</tbody></table>'
+        + '<div class="note">본 리포트는 마스킹된 샘플·위치·건수만 포함하며 원본 개인정보를 담지 않습니다. — piiscan</div>'
+        + '</body></html>';
+}
+

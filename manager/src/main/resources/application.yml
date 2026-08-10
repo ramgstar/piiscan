@@ -17,6 +17,10 @@ piiscan:
   scanner-jar: scanner/target/piiscan-scanner.jar
   # scanner 실행에 사용할 java 실행 파일.
   java-bin: java
+  # 로그 파일 경로(logback-spring.xml이 사용).
+  log-path: piiScanner/logs
+  # 과거 결과 이력을 읽는 디렉토리(scanner가 results/<runId>/ 로 기록).
+  results-dir: piiScanner/results
   schedule:
     # 스캔 스케줄 간격(ms). 직전 실행이 끝난 뒤부터 이 시간만큼 지나면 다음 실행을 시도합니다
     # (fixedDelay). RunState 가드가 겹치는 실행을 막습니다. 스케줄을 사실상 끄려면 아주 큰
@@ -48,6 +52,10 @@ spring:
 
 server:
   port: ${PORT:8080}
+
+# 배포(zip) 레이아웃: scanner jar은 jars/, 엔진은 anlys/ 에 위치한다.
+piiscan:
+  scanner-jar: jars/piiscan-scanner.jar
 
 logging:
   level:

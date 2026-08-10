@@ -53,6 +53,10 @@ public class ScannerLauncher {
     private String scannerJar;
     @Value("${piiscan.java-bin:java}")
     private String javaBin;
+    // Forwarded to the scanner so it resolves its own dev/prod paths (e.g. the
+    // engine at anlys/ under the deployment layout) the same way the manager does.
+    @Value("${spring.profiles.active:dev}")
+    private String activeProfile;
 
     // Latest state, read by the /status and /summary endpoints and replayed to
     // late SSE subscribers. Volatile: written by the reader virtual thread, read
@@ -106,7 +110,9 @@ public class ScannerLauncher {
     private void runScanner(String runId) {
         try {
             ProcessBuilder pb = new ProcessBuilder(
-                    javaBin, "-jar", scannerJarAbsPath(), "--run-id", runId);
+                    javaBin, "-jar", scannerJarAbsPath(),
+                    "--run-id", runId,
+                    "--spring.profiles.active=" + activeProfile);
             // Working dir is the manager's working dir (repo root by convention) so
             // the scanner finds scanFiles/engine/patterns via its own config.
             pb.redirectErrorStream(true);

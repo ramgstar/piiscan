@@ -1,0 +1,90 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.2.0 http://maven.apache.org/xsd/assembly-2.2.0.xsd">
+
+    <!--
+      배포 zip 레이아웃(압축 해제 후 루트에서 startup 스크립트 실행):
+        ./piiscan-manager.jar         실행 jar(웹 :8080)
+        ./jars/piiscan-scanner.jar    manager가 실행하는 scanner
+        ./anlys/piiscan-engine[.exe]  네이티브 정규식 엔진
+        ./config/application.yml      외부 편집용 설정
+        ./piiScanner/...              스캔 폴더 스캐폴드(patterns.json + scanFiles 샘플)
+        ./startup.sh/.bat, shutdown.sh/.bat
+        ./logs/                       런타임 로그
+    -->
+    <id>dist</id>
+    <includeBaseDirectory>true</includeBaseDirectory>
+    <formats>
+        <format>zip</format>
+    </formats>
+
+    <fileSets>
+        <fileSet>
+            <directory>${project.build.directory}/config</directory>
+            <outputDirectory>./config</outputDirectory>
+            <includes>
+                <include>*.yml</include>
+            </includes>
+        </fileSet>
+
+        <!-- Windows 스크립트 -->
+        <fileSet>
+            <directory>${project.build.directory}/bin</directory>
+            <outputDirectory>./</outputDirectory>
+            <includes>
+                <include>*.bat</include>
+            </includes>
+        </fileSet>
+        <!-- Linux 스크립트: unix 개행 + 실행 권한 -->
+        <fileSet>
+            <directory>${project.build.directory}/bin</directory>
+            <outputDirectory>./</outputDirectory>
+            <includes>
+                <include>*.sh</include>
+            </includes>
+            <lineEnding>unix</lineEnding>
+            <fileMode>0755</fileMode>
+        </fileSet>
+
+        <!-- 네이티브 엔진 -->
+        <fileSet>
+            <directory>${project.build.directory}/anlys</directory>
+            <outputDirectory>./anlys</outputDirectory>
+            <includes>
+                <include>piiscan-engine</include>
+                <include>piiscan-engine.exe</include>
+            </includes>
+            <fileMode>0755</fileMode>
+        </fileSet>
+
+        <!-- manager 실행 jar -->
+        <fileSet>
+            <directory>${project.build.directory}</directory>
+            <outputDirectory>./</outputDirectory>
+            <includes>
+                <include>${project.build.finalName}.jar</include>
+            </includes>
+        </fileSet>
+
+        <!-- scanner jar -->
+        <fileSet>
+            <directory>${project.build.directory}/jars</directory>
+            <outputDirectory>./jars</outputDirectory>
+            <includes>
+                <include>*.jar</include>
+            </includes>
+        </fileSet>
+
+        <!-- 스캔 폴더 스캐폴드 -->
+        <fileSet>
+            <directory>${project.build.directory}/piiScanner</directory>
+            <outputDirectory>./piiScanner</outputDirectory>
+        </fileSet>
+
+        <!-- 빈 로그 디렉토리 -->
+        <fileSet>
+            <directory>${project.build.directory}/logs</directory>
+            <outputDirectory>./logs</outputDirectory>
+        </fileSet>
+    </fileSets>
+</assembly>

@@ -47,6 +47,8 @@ public class ScannerProperties {
     private int sampleLocations = 20;
     /** Masking policy for reported values: {@code full}, {@code partial} or {@code hash}. */
     private String masking = "partial";
+    /** Retention: keep only the newest N completed run folders under outputDir (0 = unbounded). */
+    private int resultsMaxRuns = 20;
 
     public String getScanDir() {
         return scanDir;
@@ -158,6 +160,14 @@ public class ScannerProperties {
 
     public void setMasking(String masking) {
         this.masking = masking;
+    }
+
+    public int getResultsMaxRuns() {
+        return resultsMaxRuns;
+    }
+
+    public void setResultsMaxRuns(int resultsMaxRuns) {
+        this.resultsMaxRuns = resultsMaxRuns;
     }
 
     // ---- Path convenience getters --------------------------------------

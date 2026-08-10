@@ -85,7 +85,6 @@ public final class ScanCoordinator {
         Instant startedAt = Instant.now();
         ProgressReporter reporter = new ProgressReporter();
         FileMover fileMover = new FileMover(props);
-        ReportWriter reportWriter = new ReportWriter(props.outputDirPath());
         RunAccumulator accumulator = new RunAccumulator();
 
         List<Path> claimed = new FileScanner(props).claimEligible();
@@ -93,13 +92,16 @@ public final class ScanCoordinator {
         reporter.setTotal(total);
 
         if (claimed.isEmpty()) {
+            // 파일이 없으면 이력 폴더를 만들지 않고(스케줄 빈 실행이 이력을 오염시키지 않도록)
+            // 대시보드용 SUMMARY 마커만 내보내고 종료한다.
             RunSummary summary = new RunSummary(runId, startedAt, Instant.now(), 0,
                     0, 0, 0, 0, Map.of(), List.of());
-            reportWriter.writeRunSummary(summary);
             reporter.summary(summaryJson(summary));
             return 0;
         }
 
+        // 파일이 있는 경우에만 run 폴더(results/<runId>/)를 만든다.
+        ReportWriter reportWriter = new ReportWriter(props.outputDirPath(), runId);
         Masker masker = new Masker(props.getMasking());
         MessageBroker<ScanTask> broker = new ArrayBlockingQueueBroker<>(props.getBrokerCapacity());
         Path workDir = Files.createTempDirectory("piiscan-" + runId + "-");
@@ -158,6 +160,7 @@ public final class ScanCoordinator {
                 accumulator.byPattern(),
                 accumulator.failures());
         reportWriter.writeRunSummary(summary);
+        reportWriter.pruneOldRuns(props.getResultsMaxRuns());
         reporter.summary(summaryJson(summary));
 
         deleteWorkDir(workDir);

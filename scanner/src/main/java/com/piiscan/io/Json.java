@@ -181,6 +181,9 @@ public final class Json {
                     return sb.toString();
                 }
                 if (c == '\\') {
+                    if (atEnd()) {
+                        throw new JsonException("unterminated escape");
+                    }
                     char e = s.charAt(pos++);
                     switch (e) {
                         case '"' -> sb.append('"');
@@ -192,9 +195,16 @@ public final class Json {
                         case 'b' -> sb.append('\b');
                         case 'f' -> sb.append('\f');
                         case 'u' -> {
+                            if (pos + 4 > s.length()) {
+                                throw new JsonException("truncated \\u escape");
+                            }
                             String hex = s.substring(pos, pos + 4);
                             pos += 4;
-                            sb.append((char) Integer.parseInt(hex, 16));
+                            try {
+                                sb.append((char) Integer.parseInt(hex, 16));
+                            } catch (NumberFormatException nfe) {
+                                throw new JsonException("bad \\u escape: " + hex);
+                            }
                         }
                         default -> throw new JsonException("bad escape \\" + e);
                     }
@@ -250,6 +260,9 @@ public final class Json {
         }
 
         private char next() {
+            if (atEnd()) {
+                throw new JsonException("unexpected end of input");
+            }
             return s.charAt(pos++);
         }
 

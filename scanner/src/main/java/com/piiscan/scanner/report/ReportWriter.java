@@ -7,9 +7,12 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * Serializes {@link FileReport} and {@link RunSummary} to JSON files in the
@@ -19,23 +22,31 @@ import java.util.Map;
  * library, matching the dependency-free style used elsewhere in the pipeline.
  * Location objects are written by a small generic serializer so both CSV
  * ({@code row}/{@code col}) and JSON ({@code path}) shapes round-trip.
+ *
+ * <p>Each run's outputs live under {@code <outputDir>/<runId>/} so history is
+ * preserved across runs even when the same source file name is scanned again.
  */
 public final class ReportWriter {
 
     private final Path outputDir;
+    private final Path runDir;
 
-    /** @param outputDir directory where report files are written (created if missing) */
-    public ReportWriter(Path outputDir) {
+    /**
+     * @param outputDir root results directory (created if missing)
+     * @param runId     this run's id; reports are written under {@code outputDir/runId/}
+     */
+    public ReportWriter(Path outputDir, String runId) {
         this.outputDir = outputDir;
+        this.runDir = outputDir.resolve(runId);
         try {
-            Files.createDirectories(outputDir);
+            Files.createDirectories(runDir);
         } catch (IOException e) {
             throw new UncheckedIOException("failed to create output directory", e);
         }
     }
 
     /**
-     * Write a per-file report to {@code <outputDir>/<sourceName>.report.json}.
+     * Write a per-file report to {@code <outputDir>/<runId>/<sourceName>.report.json}.
      *
      * @return the path written
      */
@@ -91,13 +102,14 @@ public final class ReportWriter {
         }
         sb.append("]}");
 
-        Path out = outputDir.resolve(r.sourceName() + ".report.json");
+        Path out = runDir.resolve(r.sourceName() + ".report.json");
         Files.writeString(out, sb.toString(), StandardCharsets.UTF_8);
         return out;
     }
 
     /**
-     * Write a run summary to {@code <outputDir>/run-<runId>.summary.json}.
+     * Write a run summary to {@code <outputDir>/<runId>/summary.json}. Its presence
+     * marks the run as complete (the manager only lists runs that have it).
      *
      * @return the path written
      */
@@ -143,9 +155,55 @@ public final class ReportWriter {
         }
         sb.append("]}");
 
-        Path out = outputDir.resolve("run-" + s.runId() + ".summary.json");
+        Path out = runDir.resolve("summary.json");
         Files.writeString(out, sb.toString(), StandardCharsets.UTF_8);
         return out;
+    }
+
+    /**
+     * Retention: keep only the newest {@code maxRuns} completed run folders under
+     * {@code outputDir}, deleting older ones. A run folder counts only if it has a
+     * {@code summary.json}. No-op when {@code maxRuns <= 0} (unbounded).
+     */
+    public void pruneOldRuns(int maxRuns) {
+        if (maxRuns <= 0) {
+            return;
+        }
+        List<Path> runs;
+        try (Stream<Path> s = Files.list(outputDir)) {
+            runs = s.filter(Files::isDirectory)
+                    .filter(d -> Files.exists(d.resolve("summary.json")))
+                    .sorted(Comparator.comparing(ReportWriter::lastModified).reversed())
+                    .toList();
+        } catch (IOException e) {
+            System.err.println("prune: cannot list " + outputDir + ": " + e.getMessage());
+            return;
+        }
+        for (int i = maxRuns; i < runs.size(); i++) {
+            deleteRecursively(runs.get(i));
+        }
+    }
+
+    private static FileTime lastModified(Path p) {
+        try {
+            return Files.getLastModifiedTime(p);
+        } catch (IOException e) {
+            return FileTime.fromMillis(0);
+        }
+    }
+
+    private static void deleteRecursively(Path dir) {
+        try (Stream<Path> walk = Files.walk(dir)) {
+            walk.sorted(Comparator.reverseOrder()).forEach(p -> {
+                try {
+                    Files.deleteIfExists(p);
+                } catch (IOException ignored) {
+                    // best-effort
+                }
+            });
+        } catch (IOException e) {
+            System.err.println("prune: cannot delete " + dir + ": " + e.getMessage());
+        }
     }
 
     // ---- helpers --------------------------------------------------------

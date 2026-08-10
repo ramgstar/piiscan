@@ -48,4 +48,113 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!--
+          배포 프로필: `mvn clean package -Pdist` 로 실행하면 배포용 zip을 만든다.
+          1) antrun(prepare-package): target/ 에 bin·엔진 바이너리(anlys)·scanner jar(jars)·
+             설정(config)·샘플 스캐폴드(piiScanner)·logs 를 모으고 bin 스크립트의 @PROFILE 토큰 치환.
+          2) spring-boot repackage: manager 실행 jar 생성.
+          3) assembly(package): assembly.xml 기준으로 piiscan-manager.zip 생성.
+          meerkat mkat-manager의 패키징 방식을 참고했다(회사 특화 jdbcLibs 등은 제외).
+        -->
+        <profile>
+            <id>dist</id>
+            <properties>
+                <dist.profile>prod</dist.profile>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>assemble-dist-tree</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <mkdir dir="${project.build.directory}/logs"/>
+                                        <mkdir dir="${project.build.directory}/bin"/>
+                                        <mkdir dir="${project.build.directory}/anlys"/>
+                                        <mkdir dir="${project.build.directory}/jars"/>
+                                        <mkdir dir="${project.build.directory}/config"/>
+                                        <mkdir dir="${project.build.directory}/piiScanner"/>
+
+                                        <!-- 실행 스크립트 -->
+                                        <copy todir="${project.build.directory}/bin/" overwrite="true">
+                                            <fileset dir="bin/">
+                                                <include name="**/*"/>
+                                            </fileset>
+                                        </copy>
+
+                                        <!-- 네이티브 엔진 바이너리(현재 플랫폼). 없으면 조용히 건너뜀.
+                                             교차 플랫폼 zip은 상대 OS 바이너리를 anlys/ 에 추가하면 된다. -->
+                                        <copy todir="${project.build.directory}/anlys/" overwrite="true" failonerror="false">
+                                            <fileset dir="${project.basedir}/../engine/target/release/">
+                                                <include name="piiscan-engine"/>
+                                                <include name="piiscan-engine.exe"/>
+                                            </fileset>
+                                        </copy>
+
+                                        <!-- scanner fat jar (scanner의 dist 프로필이 여기에 복사해 둠) -->
+                                        <copy todir="${project.build.directory}/jars/" overwrite="true" failonerror="false">
+                                            <fileset dir="jars/">
+                                                <include name="*.jar"/>
+                                            </fileset>
+                                        </copy>
+
+                                        <!-- 외부에서 수정 가능한 설정 -->
+                                        <copy todir="${project.build.directory}/config/" overwrite="true">
+                                            <fileset dir="src/main/resources/">
+                                                <include name="application.yml"/>
+                                            </fileset>
+                                        </copy>
+
+                                        <!-- 샘플 스캐폴드(patterns.json + scanFiles) -->
+                                        <copy todir="${project.build.directory}/piiScanner/" overwrite="true">
+                                            <fileset dir="${project.basedir}/../piiScanner/">
+                                                <include name="patterns.json"/>
+                                                <include name="scanFiles/**"/>
+                                            </fileset>
+                                        </copy>
+
+                                        <!-- bin 스크립트 토큰 치환 -->
+                                        <replace dir="${project.build.directory}/bin/" includes="**/*.sh"
+                                                 token="@PROFILE" value="${dist.profile}" encoding="UTF-8"/>
+                                        <replace dir="${project.build.directory}/bin/" includes="**/*.bat"
+                                                 token="@PROFILE" value="${dist.profile}" encoding="UTF-8"/>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <configuration>
+                            <finalName>${project.artifactId}</finalName>
+                            <outputDirectory>${project.build.directory}</outputDirectory>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <descriptors>
+                                <descriptor>assembly.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>archive</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

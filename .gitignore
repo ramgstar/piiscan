@@ -25,3 +25,9 @@ piiScanner/processed/
 piiScanner/failed/
 piiScanner/results/
 piiScanner/scanFiles/.processing/
+
+# 배포 스테이징(빌드 시 채워짐)
+manager/jars/*.jar
+manager/anlys/piiscan-engine
+manager/anlys/piiscan-engine.exe
+piiScanner/logs/
