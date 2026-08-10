@@ -1,142 +1,116 @@
-# piiscan-analyzer
+# piiscan-scanner
 
-[piiscan](../README.md)의 분석 단계로, Spring Boot CLI 애플리케이션입니다. manager가 스캔
-작업마다 이 프로그램을 **자식 프로세스로 실행**합니다. 데이터 소스의 컬럼 값을 중복 제거해
-배치로 묶고, 각 배치를 네이티브 [engine](../engine/README.md)에 통과시켜 정규식 후보를 얻은
-뒤, 후보를 **체크섬**으로 확정하고 결과를 집계합니다.
+[piiscan](../README.md)의 스캔 단계로, **run 당 한 번 실행되는 Spring Boot 배치**입니다. manager가
+자식 프로세스로 실행하며, 착륙 폴더의 파일을 감지·클레임하여 파싱하고, 네이티브 엔진으로 정규식
+매칭한 뒤 체크섬으로 확정해 **마스킹된 리포트**를 `results/<runId>/`에 적재합니다.
 
-스캔 코어(`com.piiscan.*`)에는 **Spring 의존성이 전혀 없습니다.** Spring 계층은 manager와
-통신하기 위한 얇은 진입점일 뿐이며, 코어는 `com.piiscan.Main` 으로 프레임워크 없이 단독
-실행·테스트할 수 있습니다.
+스캔 코어(`com.piiscan.engine`·`validate`·`io`·`model`)에는 **Spring 의존성이 없습니다.** 파서
+라이브러리 의존성도 `parse` 계층에만 둡니다.
 
-## 동작 방식
+## 파이프라인
 
 ```
-데이터 소스(CSV 또는 합성)
-      │  생산자: 동일 값을 빈도 테이블로 접음 (value, count)
-      ▼
-  유계 큐  ── 백프레셔: 매칭이 밀리면 생산자가 블록
-      │
-      ▼  소비자(가상 스레드) × N
-  ┌─────────────────────────────────────────────┐
-  │ 배치 → engine 프로세스 실행(JSONL 입출력)    │
-  │ → 후보 finding 검증(체크섬) → 집계기에 접음  │
-  └─────────────────────────────────────────────┘
-      │
-      ▼
-  집계 리포트 → 사람이 읽는 표(단독 실행) 또는
-                RESULT= 마커(manager가 실행한 경우)
+scanFiles/ ──claim──▶ .processing/
+     │  FileScanner: 원자적 이동(중복 방지 + "쓰는 중" 가드) + 크래시 복구
+     ▼
+파일 1건당 producer(가상 스레드)              [ParserRegistry: 확장자→파서 Strategy]
+     │  CsvFileParser(Apache Commons CSV) / JsonFileParser(Jackson 스트리밍)
+     │  → dedup(value,count) + 위치 수집 → input.jsonl  (claim-check publish)
+     ▼
+[ MessageBroker (ArrayBlockingQueue, 유계=백프레셔; Kafka 교체 가능) ]
+     ▼
+consumer 풀(yml)  ── ProcessBuilder ──▶ engine (정규식 후보)
+     │  → 2차 체크섬 확정 → 값→위치 조인 → 마스킹
+     ▼
+results/<runId>/{summary.json, <source>.report.json}  +  processed//failed/ 이동
 ```
 
-- **생산자(producer)** 는 동일한 값을 하나로 접어, 1만 번 등장하는 값도 한 번만 매칭하고
-  `count: 10000` 을 함께 실어 보냅니다.
-- **유계 큐(bounded queue)** 가 백프레셔를 제공해, 매칭이 따라가지 못하면 생산자는 소스
-  전체를 읽어들이는 대신 블록됩니다.
-- 각 **소비자(consumer)** 는 가상 스레드로, 배치 하나를 별도 프로세스로 엔진에 통과시키고
-  findings를 검증한 뒤 스레드 안전 집계기에 접어 넣습니다.
+- **producer**: 파일 1건을 통일 `input.jsonl`로 가공. 확장자는 파서 선택(Strategy)일 뿐 producer
+  수를 확장자에 묶지 않으므로, 어느 확장자가 몰려도 가상 스레드 풀이 자동 로드밸런싱한다. 파일 내
+  **dedup**으로 같은 값을 (value, count)로 접고 위치 샘플(상한)을 함께 담는다.
+- **broker**: claim-check(디스크의 input 파일 참조)만 큐로 전달. 유계 큐가 백프레셔를 제공한다.
+- **consumer**: 파일당 엔진 프로세스를 띄우므로 **동시 consumer 수(yml)가 실질 병목이자 튜닝
+  노브**다. 엔진 output(후보)을 체크섬으로 확정하고, 엔진이 값을 그대로 echo하는 점을 이용해
+  `input.jsonl`의 value→locations를 조인한 뒤 마스킹해 리포트를 쓴다.
 
-## manager와의 통신 (프로세스 경계)
+## 결과 저장
 
-manager가 실행할 때, analyzer는 **stdout 마커**로만 진행 상황을 되돌려줍니다. 공유 런타임도
-RPC도 없습니다:
+run별 폴더로 이력을 보존합니다(같은 파일명을 재스캔해도 덮어쓰지 않음).
 
-- `PROGRESS={"batches":N,"values":N,"confirmed":N}` — 배치가 하나 끝날 때마다 출력
-- `RESULT={ ...집계 리포트... }` — 마지막에 한 번 출력
+```
+piiScanner/results/<runId>/
+├── summary.json                 # run 요약(파일 수, 확정 총계, 패턴별 집계, 실패)
+├── <source1>.report.json        # 파일별: 위치·패턴·마스킹 샘플·건수(원본 값 없음)
+└── <source2>.report.json
+```
 
-종료 코드는 성공 시 `0`, 실패 시 `1` 이라 manager가 정상 종료와 비정상 종료를 구분할 수
-있습니다. 로그는 stdout 마커와 섞이지 않도록 억제되어 있습니다.
+- **보안**: 리포트에 원본 PII를 남기지 않는다 — 위치·패턴·마스킹 샘플·건수만.
+- **재현성**: 리포트에 patterns.json 버전/해시 + 엔진 버전을 함께 기록.
+- **완료 표식**: `summary.json`은 run 종료 시 마지막에 기록되므로 그 존재가 곧 "완료" 판정 기준
+  (manager가 완료 run만 노출).
+- **보존 상한**: run 종료 후 최신 `results-max-runs`(기본 20)개 run 폴더만 유지하고 초과분 삭제.
+  파일이 없는 빈 실행은 폴더를 만들지 않는다.
 
-## 빌드
-
-저장소 루트에서 전체를 빌드하거나(권장), 이 모듈만 빌드합니다:
+## 빌드 / 실행
 
 ```bash
-# 저장소 루트에서 (모든 모듈)
-mvn -B package
-
-# …또는 이 모듈만
-mvn -B -pl analyzer -am package
+# 저장소 루트에서(모든 모듈)  또는  이 모듈만
+mvn -B package                 #   mvn -B -pl scanner -am package
 ```
 
-생성물: `analyzer/target/piiscan-analyzer.jar` (실행 가능한 fat jar).
-
-> analyzer의 엔드투엔드 테스트는 실제 엔진 바이너리를 구동하므로, 테스트를 실행하려면 먼저
-> `cargo build --release --manifest-path engine/Cargo.toml` 로 엔진을 빌드해 두세요. 엔진이
-> 없으면 해당 테스트는 자동으로 건너뜁니다.
-
-## 실행 (CLI)
+생성물: `scanner/target/piiscan-scanner.jar`(실행 가능 fat jar). manager가 아래처럼 실행합니다.
 
 ```bash
-java -jar analyzer/target/piiscan-analyzer.jar \
-  --engine engine/target/release/piiscan-engine \
-  --patterns samples/patterns.json \
-  --synthetic 20000 --workers 8 --batch-size 2000
+java -jar scanner/target/piiscan-scanner.jar --run-id <id> [--spring.profiles.active=prod]
 ```
 
-| 플래그          | 의미                                                        | 기본값            |
-|-----------------|-------------------------------------------------------------|-------------------|
-| `--engine`      | `piiscan-engine` 바이너리 경로                              | OS별 기본 경로    |
-| `--patterns`    | 패턴 JSON                                                   | `samples/patterns.json` |
-| `--input`       | 스캔할 CSV 파일(모든 컬럼)                                  | (없음)            |
-| `--synthetic`   | CSV 대신 생성할 합성 행 수                                  | `5000`            |
-| `--workers`     | 소비자 가상 스레드 수                                       | CPU 코어 수       |
-| `--batch-size`  | 배치당 고유 값 수                                           | `1000`            |
-| `--seed`        | 합성 RNG 시드                                               | `42`              |
-| `-h`, `--help`  | 사용법 출력                                                 |                   |
+엔진 바이너리가 필요합니다(`cargo build --release --manifest-path engine/Cargo.toml`).
 
-> Windows에서는 `--engine` 에 확장자 없이 경로를 넘겨도 `piiscan-engine.exe` 를 자동으로
-> 찾습니다(`RegexEngine` 의 `.exe` 폴백).
+## 설정 (application.yml, `piiscan.*`)
 
-출력 예시:
+| 키                     | 의미                                            | 기본값                                   |
+|------------------------|-------------------------------------------------|------------------------------------------|
+| `scan-dir`             | 착륙 폴더                                        | `piiScanner/scanFiles`                   |
+| `processing-dir`       | 클레임 스테이징                                  | `piiScanner/scanFiles/.processing`       |
+| `processed-dir`/`failed-dir` | 처리/실패 이동 대상                        | `piiScanner/processed` / `.../failed`    |
+| `output-dir`           | 결과 루트(run 하위 폴더 생성)                    | `piiScanner/results`                     |
+| `patterns-path`        | 패턴 JSON                                        | `piiScanner/patterns.json`               |
+| `engine-path`          | 엔진 바이너리(Windows는 `.exe` 자동 폴백)        | `engine/target/release/piiscan-engine`   |
+| `consumers`            | 동시 consumer 수(=동시 엔진 프로세스)            | CPU 코어 수                              |
+| `broker-capacity`      | 큐 용량(백프레셔)                                | 64                                       |
+| `sample-locations`     | 값당 위치 샘플 상한                              | 20                                       |
+| `quiet-period-seconds` | 이 시간 내 수정된 파일은 "쓰는 중"으로 보고 스킵 | 5                                        |
+| `ignore-extensions`    | 무시 확장자                                      | `[tmp, part]`                            |
+| `masking`              | 마스킹 정책 `full`/`partial`/`hash`              | `partial`                                |
+| `results-max-runs`     | 보존할 run 수(0=무제한)                          | 20                                       |
 
-```
-piiscan report
-----------------------------------------------
-source        : synthetic.SAMPLE
-workers       : 8 (virtual threads)
-values scanned: 15,083 distinct (20,000 rows)
-batches       : 8 (0 failed)
-elapsed       : 551 ms
-----------------------------------------------
-PATTERN  NAME                                CONFIRMED   REJECTED
-CARD     Credit card number                       2496       2518
-...
-----------------------------------------------
-confirmed PII rows: 9,993
-```
+`prod` 프로필은 `engine-path`를 `anlys/piiscan-engine`(배포 zip 레이아웃)으로 오버라이드합니다.
 
-`CONFIRMED` 는 정규식과 체크섬을 모두 통과한 값, `REJECTED` 는 정규식엔 걸렸지만 체크섬에서
-탈락한 유사값입니다.
+## 로깅
 
-## 체크섬 검증기
+**로그는 파일에만** 기록합니다(`piiScanner/logs/scanner.log`, 롤링). scanner의 stdout은 manager가
+파싱하는 `PROGRESS=`/`FILE=`/`SUMMARY=` **마커 채널**이라 콘솔 어펜더를 두지 않습니다
+(`logback-spring.xml`).
 
-패턴의 `validator` 값에 따라 후보를 확정합니다(`com.piiscan.validate`):
+## "쓰는 중"·복구·정리
 
-| validator | 대상            | 알고리즘                          |
-|-----------|-----------------|-----------------------------------|
-| `luhn`    | 카드번호         | Luhn(mod-10)                      |
-| `kr_rrn`  | 주민등록번호     | 가중치 검사 숫자                  |
-| `kr_brn`  | 사업자등록번호   | 검사 숫자                         |
-| `none`    | 이메일 등        | 정규식 매칭을 그대로 통과         |
-
-새로운 종류의 검증기 추가는 `ValidatorRegistry` 에 한 줄 등록하는 일입니다.
+- **2겹 가드**: (a) `.processing/`으로 원자적 이동(복사 중인 파일은 Windows에서 잠겨 이동 실패 →
+  다음 run에 처리) + (b) mtime quiet-period. `*.tmp`/`*.part`는 무시.
+- **크래시 복구**: run 시작 시 `.processing/`에 남은 파일을 재클레임.
+- **정리**: 임시 input/output는 성공·실패 양쪽 경로에서 삭제, 원본은 processed/failed로 이동.
 
 ## 디렉토리 구조
 
 ```
-analyzer/
-├── pom.xml
-└── src/
-    ├── main/java/com/piiscan/
-    │   ├── Main.java          # 프레임워크 없는 CLI 진입점
-    │   ├── app/               # Spring Boot 진입점(얇음, PROGRESS/RESULT 마커 출력)
-    │   ├── cli/               # ScanConfig, ScanRunner (공용 코어)
-    │   ├── engine/            # RegexEngine: 엔진 프로세스 래퍼(.exe 폴백 포함)
-    │   ├── pipeline/          # ScanPipeline, ProgressListener (유계 생산자/소비자)
-    │   ├── validate/          # Checksums, ValidatorRegistry
-    │   ├── source/            # CsvDataSource, SyntheticDataSource
-    │   ├── io/                # Json, Jsonl, ReportJson (최소 코덱)
-    │   └── model/             # 레코드: PatternDef, Finding, ScanReport
-    ├── main/resources/        # application.yml (웹 비활성, stdout 정리, dev/prod 프로필)
-    └── test/java/             # 검증기·코덱·엔드투엔드 파이프라인 테스트
+scanner/src/main/java/com/piiscan/
+├── scanner/
+│   ├── app/         ScannerApplication            # Spring Boot 진입점(CommandLineRunner)
+│   ├── config/      ScannerProperties             # @ConfigurationProperties("piiscan")
+│   ├── ingest/      FileScanner, FileMover        # 클레임/복구, processed·failed 이동
+│   ├── parse/       Parser, CsvFileParser, JsonFileParser, ParserRegistry,
+│   │                InputWriter, UnifiedValue, Location   # 파싱·dedup·위치·통일 input
+│   ├── broker/      MessageBroker, ArrayBlockingQueueBroker, ScanTask
+│   ├── pipeline/    ScanCoordinator, ProducerTask, ConsumerWorker, ProgressReporter, Markers
+│   └── report/      ReportWriter, Masker, PatternSetInfo, FileReport, RunSummary, PatternFinding
+└── {engine,validate,io,model}/                    # 재사용 코어(RegexEngine, Checksums, Json/Jsonl, records)
 ```
